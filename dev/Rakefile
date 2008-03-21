@@ -1,8 +1,9 @@
 # vim: syntax=Ruby
 
 require 'hoe'
+require './lib/cached_model'
 
-Hoe.new 'cached_model', '1.3.1' do |p|
+Hoe.new 'cached_model', CachedModel::VERSION do |p|
   p.summary = 'An ActiveRecord abstract model that caches records in memcached'
   p.description = 'CachedModel caches simple (by id) finds in memcached reducing the amount of work the database needs to perform for simple queries.'
   p.author = ['Eric Hodel', 'Robert Cottrell']

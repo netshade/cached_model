@@ -2,6 +2,7 @@ $TESTING_CM = defined? $TESTING_CM
 
 require 'timeout'
 require 'memcache_util' unless $TESTING_CM
+require 'active_record' unless $TESTING_CM
 
 ##
 # An abstract ActiveRecord descendant that caches records in memcache and in
@@ -19,6 +20,10 @@ require 'memcache_util' unless $TESTING_CM
 # You can adjust the memcached TTL with CachedModel::ttl=
 
 class CachedModel < ActiveRecord::Base
+
+  self.abstract_class = true
+
+  VERSION = '1.3.2'
 
   @cache_delay_commit = {}
   @cache_local = {}
@@ -68,24 +73,6 @@ class CachedModel < ActiveRecord::Base
 
     attr_accessor :ttl
 
-  end
-
-  ##
-  # We only work on 1.1.2 + because Rails broke backwards compatibility
-  # despite a bug http://dev.rubyonrails.org/ticket/3704
-
-  if Rails::VERSION::MAJOR > 1 or
-     (Rails::VERSION::MAJOR == 1 and Rails::VERSION::MINOR > 1) or
-     (Rails::VERSION::MAJOR == 1 and Rails::VERSION::MINOR == 1 and
-      Rails::VERSION::TINY >= 2) then
-
-    ##
-    # Override the flawed assumption ActiveRecord::Base makes about
-    # inheritance.
-
-    self.abstract_class = true
-  else
-    raise NotImplementedError, 'upgrade to Rails 1.1.2+'
   end
 
   ##
@@ -146,7 +133,7 @@ class CachedModel < ActiveRecord::Base
   # Find by primary key from the cache.
 
   def self.find_by_sql(*args)
-    return super unless args.first =~ /^SELECT \* FROM #{table_name} WHERE \(#{table_name}\.#{primary_key} = '?(\d+)'?\) +LIMIT 1/
+    return super unless args.first =~ /^SELECT \* FROM #{table_name} WHERE \(#{table_name}\.#{primary_key} = '?(\d+)'?\)/
 
     id = $1.to_i
 
@@ -269,7 +256,8 @@ class CachedModel < ActiveRecord::Base
   def cache_store
     obj = dup
     obj.send :instance_variable_set, :@attributes, attributes_before_type_cast
-    if CachedModel.cache_delay_commit[CachedModel.cache_transaction_level].nil? then
+    transaction_level = CachedModel.cache_transaction_level
+    if CachedModel.cache_delay_commit[transaction_level].nil? then
       if CachedModel.use_local_cache? then
         cache_local[cache_key_local] = obj
       end
@@ -277,7 +265,7 @@ class CachedModel < ActiveRecord::Base
         Cache.put cache_key_memcache, obj, CachedModel.ttl
       end
     else
-      CachedModel.cache_delay_commit[CachedModel.cache_transaction_level] << obj
+      CachedModel.cache_delay_commit[transaction_level] << obj
     end
     nil
   end
