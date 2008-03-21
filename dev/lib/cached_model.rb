@@ -133,7 +133,7 @@ class CachedModel < ActiveRecord::Base
   # Find by primary key from the cache.
 
   def self.find_by_sql(*args)
-    return super unless args.first =~ /^SELECT \* FROM #{table_name} WHERE \(#{table_name}\.#{primary_key} = '?(\d+)'?\)/
+    return super unless args.first =~ /^SELECT \* FROM #{table_name} WHERE \(#{table_name}\.#{primary_key} = '?(\d+)'?\)( +LIMIT 1|\Z)/
 
     id = $1.to_i
 

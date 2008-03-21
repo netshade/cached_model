@@ -324,9 +324,30 @@ class TestCachedModel < Test::Unit::TestCase
     assert_equal record, util_memcache(record)
   end
 
-  def test_class_find_by_sql
+  def test_class_find_by_sql_1_1_x
     CachedModel.use_local_cache = true
+    util_set
+
+    q = "SELECT * FROM concrete WHERE (concrete.id = #{@model.id}) LIMIT 1"
+    record = Concrete.find_by_sql(q).first
+    assert_equal @model.id, record.id
+
     q = "SELECT * FROM concrete WHERE (concrete.id = #{@model.id + 1}) LIMIT 1"
+    record = Concrete.find_by_sql(q).first
+    assert_equal @model.id + 1, record.id
+
+    assert_equal record, util_local(record)
+    assert_equal record, util_memcache(record)
+  end
+
+  def test_class_find_by_sql_1_2_x
+    CachedModel.use_local_cache = true
+    util_set
+    q = "SELECT * FROM concrete WHERE (concrete.id = #{@model.id})"
+    record = Concrete.find_by_sql(q).first
+    assert_equal @model.id, record.id
+
+    q = "SELECT * FROM concrete WHERE (concrete.id = #{@model.id + 1})"
     record = Concrete.find_by_sql(q).first
     assert_equal @model.id + 1, record.id
 
@@ -342,6 +363,18 @@ class TestCachedModel < Test::Unit::TestCase
 
     assert_equal record, util_local(record)
     assert_equal record, util_memcache(record)
+  end
+
+  def test_class_find_by_sql_trailing_stuff
+    CachedModel.use_local_cache = true
+    util_set
+
+    q = "SELECT * FROM concrete WHERE (concrete.id = #{@model.id}) AND 1 = 1"
+    record = Concrete.find_by_sql(q).first
+    assert_equal @model.id + 1, record.id
+
+    assert_equal nil, util_local(record)
+    assert_equal nil, util_memcache(record)
   end
 
   def test_class_find_by_sql_no_record
