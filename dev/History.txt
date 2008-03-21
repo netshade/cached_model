@@ -1,6 +1,7 @@
 = 1.3.2
 
 * Moved to p4
+* Fixed find_by_sql for Rails 1.2.x
 
 = 1.3.1
 
