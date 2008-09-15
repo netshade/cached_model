@@ -23,7 +23,7 @@ class CachedModel < ActiveRecord::Base
 
   self.abstract_class = true
 
-  VERSION = '1.3.2'
+  VERSION = '1.3.3'
 
   @cache_delay_commit = {}
   @cache_local = {}
@@ -204,7 +204,7 @@ class CachedModel < ActiveRecord::Base
   ##
   # Invalidate the cache for this record before reloading from the DB.
 
-  def reload
+  def reload(*args)
     cache_delete
     return super
   ensure
