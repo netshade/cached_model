@@ -97,7 +97,7 @@ class ActiveRecord::Base
   def destroy
   end
 
-  def reload
+  def reload(*args)
     @attributes[:data].succ!
     @attributes[:extra] = nil
   end
@@ -515,6 +515,20 @@ class TestCachedModel < Test::Unit::TestCase
     util_set
 
     @model.reload
+
+    deny_empty CachedModel.cache_local
+    deny_empty Cache.cache
+
+    assert_equal 'datb',
+                 util_local(@model).attributes[:data]
+    assert_equal 'datb',
+                 util_memcache(@model).attributes[:data]
+  end
+
+  def test_reload_with_attribs
+    util_set
+
+    @model.reload(:lock => true)
 
     deny_empty CachedModel.cache_local
     deny_empty Cache.cache
